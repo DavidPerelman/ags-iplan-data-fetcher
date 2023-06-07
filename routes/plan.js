@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const getPlanData = require('../lib/plan');
+const { getPlanData, loadDataFromMavat } = require('../lib/plan');
 
 router.get('/', (req, res) => {
   res.render('plan');
@@ -9,12 +9,25 @@ router.get('/', (req, res) => {
 
 router.post('/', async (req, res) => {
   const plan_num = req.body.plan_number;
-  let planData;
 
   try {
-    const data = await getPlanData(plan_num);
+    const planData = await getPlanData(plan_num);
 
-    console.log('data: ', data);
+    if (planData) {
+      const id = planData.features[0].attributes.pl_url.slice(33, 43);
+
+      try {
+        const mavatData = await loadDataFromMavat(id);
+
+        if (mavatData) {
+          for (let i = 0; i < mavatData.rsQuantities.length; i++) {
+            console.log(mavatData.rsQuantities[i]);
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
 
     res.send(`plan: ${plan_num}`);
   } catch (error) {
