@@ -1,6 +1,9 @@
 const express = require('express');
 const app = express();
 
+const planRouter = require('./routes/plan');
+
+app.use('/plan', planRouter);
 app.get('/', (req, res) => {
   //   res.download('server.js');
 });
