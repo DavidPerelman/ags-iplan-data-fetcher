@@ -1,5 +1,7 @@
 const express = require('express');
 const moment = require('moment/moment');
+const readShapfile = require('../lib/shapefile');
+const { convertCoordinatesTolatLong, splitPolygon } = require('../lib/polygon');
 const router = express.Router();
 
 router.get('/', (req, res) => {
@@ -34,10 +36,36 @@ router.post('/', function (req, res) {
   uploadPath = __dirname + '/../uploads/polygons/' + sampleFile.name;
 
   // Use the mv() method to place the file somewhere on your server
-  sampleFile.mv(uploadPath, function (err) {
+  sampleFile.mv(uploadPath, async function (err) {
     if (err) return res.status(500).send(err);
 
-    res.send('File uploaded!');
+    const shapefile = await readShapfile(uploadPath);
+    // res.send('File uploaded!');
+    if (shapefile) {
+      const convertedCoordinates = convertCoordinatesTolatLong(
+        shapefile.geometry.coordinates[0]
+      );
+      if (convertedCoordinates) {
+        let bigPolygon = {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'Polygon',
+                coordinates: [await convertedCoordinates],
+              },
+            },
+          ],
+        };
+
+        const splitedPolyon = await splitPolygon(bigPolygon);
+        if (splitedPolyon) {
+        }
+      }
+    }
+    res.render('download');
   });
 });
 
