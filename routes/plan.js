@@ -15,10 +15,8 @@ router.post('/', async (req, res) => {
 
     if (planData) {
       const id = planData.features[0].attributes.pl_url.slice(33, 43);
-
       try {
         const mavatData = await loadDataFromMavat(id);
-
         if (mavatData) {
           for (let i = 0; i < mavatData.rsQuantities.length; i++) {
             console.log(mavatData.rsQuantities[i]);

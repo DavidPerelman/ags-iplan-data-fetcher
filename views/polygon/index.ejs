@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>polygon</h1>
+    <!-- <form ref='uploadForm' id='uploadForm' action='http://localhost:8000/upload' method='post'
+        encType="multipart/form-data">
+        <input type="file" name="sampleFile" />
+        <input type='submit' value='Upload!' />
+    </form> -->
+    <form ref='uploadForm' id='uploadForm' action='/polygon' method='post' encType="multipart/form-data">
+        <input type="file" name="sampleFile" />
+        <input type='submit' value='Upload!' />
+    </form>
+
+    <form action="/polygon" method="POST" enctype="multipart/form-data">
+        <input name="foo" type="file" />
+        <!-- <b>polygon:</b> <input type="file" name="file" id="file" multiple /> -->
+        <button>upload</button>
+    </form>
+</body>
+
+</html>
