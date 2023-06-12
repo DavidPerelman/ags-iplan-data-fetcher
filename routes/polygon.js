@@ -14,6 +14,7 @@ const _ = require('lodash');
 const array = require('lodash/array');
 const { getPlansByCoordinates } = require('../lib/coordinates');
 const data = require('../json.json');
+const { loadDataFromMavat } = require('../lib/plan');
 
 router.get('/', (req, res) => {
   const polygon_num = req.params.polygon_number;
@@ -73,17 +74,14 @@ router.post('/', function (req, res) {
 
         const splitedPolyon = await splitPolygon(bigPolygon);
 
-        if (splitedPolyon) {
-          let newLatLongPolygon = {
-            type: 'FeatureCollection',
-            name: 'polygon',
-            features: [],
-          };
-        }
-
+        let plansFeatureCollection = {
+          type: 'FeatureCollection',
+          features: [],
+        };
         let splitedPolyonsArray = [];
         let centroidOfPolygonsArray = [];
         let newPlansArr = [];
+        let filteredPlans = [];
         let counter = 0;
 
         for (let i = 0; i < splitedPolyon.features.length; i++) {
@@ -99,14 +97,10 @@ router.post('/', function (req, res) {
           );
         }
 
-        console.log(splitedPolyonsArray.length);
-
         let unique = Array.from(
           new Set(splitedPolyonsArray.map((a) => a.join('|'))),
           (s) => s.split('|').map(Number)
         );
-
-        console.log(unique.length);
 
         const UTMCoCoordinates = await convertCoordinatesToUTM(unique);
 
@@ -122,7 +116,7 @@ router.post('/', function (req, res) {
 
             if (data) {
               for (let i = 0; i < data.features.length; i++) {
-                newPlansArr.push(data.features[i].attributes);
+                newPlansArr.push(data.features[i]);
               }
             }
           }
@@ -131,14 +125,32 @@ router.post('/', function (req, res) {
         }
 
         if (counter === 0) {
-          console.log(newPlansArr.length);
-
-          const filteredPlans = newPlansArr.filter(
+          filteredPlans = newPlansArr.filter(
             (value, index, self) =>
-              index === self.findIndex((t) => t.pl_number === value.pl_number)
+              index ===
+              self.findIndex(
+                (t) => t.attributes.pl_number === value.attributes.pl_number
+              )
           );
 
-          console.log(filteredPlans.length);
+          for (let i = 0; i < filteredPlans.length; i++) {
+            const url = new URL(filteredPlans[i].attributes.pl_url);
+            const mavatId = url.pathname.slice(7, url.pathname.length - 4);
+            try {
+              const mavatData = await loadDataFromMavat(mavatId);
+              if (mavatData.rsQuantities.length > 0) {
+                filteredPlans[i].attributes.mavat = mavatData.rsQuantities;
+              }
+              plansFeatureCollection.features.push(filteredPlans[i]);
+            } catch (error) {
+              console.log(error);
+            }
+          }
+
+          for (let z = 0; z < plansFeatureCollection.features.length; z++) {
+            const element = plansFeatureCollection.features[z];
+            console.log(element.attributes);
+          }
 
           console.log('Done');
         }
