@@ -17,6 +17,7 @@
     "express-fileupload": "^1.4.0",
     "formidable": "^2.1.1",
     "leaflet": "^1.9.4",
+    "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "nodemon": "^2.0.22",
     "proj4": "^2.9.0",
