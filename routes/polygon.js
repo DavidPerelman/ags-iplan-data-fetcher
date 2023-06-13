@@ -136,6 +136,7 @@ router.post('/', function (req, res) {
           );
 
           for (let i = 0; i < filteredPlans.length; i++) {
+            console.log(filteredPlans[i].attributes.pl_number);
             // if (filteredPlans[i].attributes.pl_area_dunam < 15) {
             const feature = {
               type: 'Feature',
