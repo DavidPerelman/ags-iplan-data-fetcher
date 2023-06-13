@@ -8,13 +8,12 @@ const {
   convertLatLongToIsraeliUTM,
   getCentroidOfPolygon,
 } = require('../lib/polygon');
-const arraysAreEqual = require('../utils/arrayFilters');
 const router = express.Router();
 const _ = require('lodash');
-const array = require('lodash/array');
 const { getPlansByCoordinates } = require('../lib/coordinates');
-const data = require('../json.json');
 const { loadDataFromMavat } = require('../lib/plan');
+const convertGeoJsonToShapefile = require('../lib/geojsonToShapefile');
+const fs = require('fs');
 
 router.get('/', (req, res) => {
   const polygon_num = req.params.polygon_number;
@@ -78,6 +77,7 @@ router.post('/', function (req, res) {
           type: 'FeatureCollection',
           features: [],
         };
+
         let splitedPolyonsArray = [];
         let centroidOfPolygonsArray = [];
         let newPlansArr = [];
@@ -129,28 +129,40 @@ router.post('/', function (req, res) {
             (value, index, self) =>
               index ===
               self.findIndex(
-                (t) => t.attributes.pl_number === value.attributes.pl_number
+                (t) =>
+                  t.attributes.pl_number === value.attributes.pl_number &&
+                  t.attributes.pl_area_dunam < 15
               )
           );
 
           for (let i = 0; i < filteredPlans.length; i++) {
+            // if (filteredPlans[i].attributes.pl_area_dunam < 15) {
+            const feature = {
+              type: 'Feature',
+              geometry: {
+                type: 'Polygon',
+              },
+            };
+
             const url = new URL(filteredPlans[i].attributes.pl_url);
             const mavatId = url.pathname.slice(7, url.pathname.length - 4);
             try {
               const mavatData = await loadDataFromMavat(mavatId);
-              if (mavatData.rsQuantities.length > 0) {
+              if (mavatData) {
                 filteredPlans[i].attributes.mavat = mavatData.rsQuantities;
               }
-              plansFeatureCollection.features.push(filteredPlans[i]);
+
+              feature.properties = filteredPlans[i].attributes;
+              feature.geometry.coordinates = filteredPlans[i].geometry.rings;
+
+              plansFeatureCollection.features.push(feature);
             } catch (error) {
               console.log(error);
             }
+            // }
           }
 
-          for (let z = 0; z < plansFeatureCollection.features.length; z++) {
-            const element = plansFeatureCollection.features[z];
-            console.log(element.attributes);
-          }
+          convertGeoJsonToShapefile(plansFeatureCollection.features);
 
           console.log('Done');
         }
