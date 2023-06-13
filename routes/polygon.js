@@ -7,6 +7,7 @@ const {
   splitPolygon,
   convertLatLongToIsraeliUTM,
   getCentroidOfPolygon,
+  checkInsideThePolygon,
 } = require('../lib/polygon');
 const router = express.Router();
 const _ = require('lodash');
@@ -79,6 +80,7 @@ router.post('/', function (req, res) {
         };
 
         let splitedPolyonsArray = [];
+        let coordinatesInside = [];
         let centroidOfPolygonsArray = [];
         let newPlansArr = [];
         let filteredPlans = [];
@@ -104,13 +106,24 @@ router.post('/', function (req, res) {
 
         const UTMCoCoordinates = await convertCoordinatesToUTM(unique);
 
-        counter = UTMCoCoordinates.length;
+        for (let i = 0; i < UTMCoCoordinates.length; i++) {
+          const inside = await checkInsideThePolygon(
+            UTMCoCoordinates[i],
+            shapefile
+          );
+
+          if (inside) {
+            coordinatesInside.push(UTMCoCoordinates[i]);
+          }
+        }
+
+        counter = coordinatesInside.length;
 
         try {
-          for (let i = 0; i < UTMCoCoordinates.length; i++) {
+          for (let i = 0; i < coordinatesInside.length; i++) {
             console.log((counter -= 1));
-            const x = UTMCoCoordinates[i][0];
-            const y = UTMCoCoordinates[i][1];
+            const x = coordinatesInside[i][0];
+            const y = coordinatesInside[i][1];
 
             const data = await getPlansByCoordinates(x, y);
 
@@ -136,7 +149,6 @@ router.post('/', function (req, res) {
           );
 
           for (let i = 0; i < filteredPlans.length; i++) {
-            console.log(filteredPlans[i].attributes.pl_number);
             // if (filteredPlans[i].attributes.pl_area_dunam < 15) {
             const feature = {
               type: 'Feature',
