@@ -148,6 +148,8 @@ router.post('/', function (req, res) {
               )
           );
 
+          console.log(filteredPlans.length);
+
           for (let i = 0; i < filteredPlans.length; i++) {
             // if (filteredPlans[i].attributes.pl_area_dunam < 15) {
             const feature = {
@@ -165,7 +167,7 @@ router.post('/', function (req, res) {
                 filteredPlans[i].attributes.mavat = mavatData.rsQuantities;
               }
 
-              feature.properties = filteredPlans[i].attributes;
+              feature.attributes = filteredPlans[i].attributes;
               feature.geometry.coordinates = filteredPlans[i].geometry.rings;
 
               plansFeatureCollection.features.push(feature);
