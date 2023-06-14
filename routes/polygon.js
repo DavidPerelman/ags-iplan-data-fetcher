@@ -15,6 +15,8 @@ const { getPlansByCoordinates } = require('../lib/coordinates');
 const { loadDataFromMavat } = require('../lib/plan');
 const convertGeoJsonToShapefile = require('../lib/geojsonToShapefile');
 const fs = require('fs');
+const converter = require('json-2-csv');
+const { default: axios } = require('axios');
 
 router.get('/', (req, res) => {
   const polygon_num = req.params.polygon_number;
@@ -117,28 +119,41 @@ router.post('/', function (req, res) {
           }
         }
 
-        counter = coordinatesInside.length;
+        let promises = [];
+        let promisesDataArray = [];
 
-        try {
-          for (let i = 0; i < coordinatesInside.length; i++) {
-            console.log((counter -= 1));
-            const x = coordinatesInside[i][0];
-            const y = coordinatesInside[i][1];
+        console.log('Loading...');
 
-            const data = await getPlansByCoordinates(x, y);
+        for (let i = 0; i < coordinatesInside.length; i++) {
+          const x = coordinatesInside[i][0];
+          const y = coordinatesInside[i][1];
 
-            if (data) {
-              for (let i = 0; i < data.features.length; i++) {
-                newPlansArr.push(data.features[i]);
+          const url = `https://ags.iplan.gov.il/arcgisiplan/rest/services/PlanningPublic/Xplan/MapServer/1/query?f=json&where=&returnGeometry=true&geometry=%7B%22x%22%3A${x}%2C%22y%22%3A${y}%2C%22spatialReference%22%3A%7B%22wkid%22%3A2039%7D%7D&geometryType=esriGeometryPoint&inSR=2039&outFields=pl_number%2Cpl_name%2Cpl_url%2Cpl_area_dunam%2Cquantity_delta_120%2Cstation_desc%2Cpl_date_advertise%2Cpl_date_8%2Cplan_county_name%2Cpl_landuse_string&orderByFields=pl_number&outSR=2039`;
+
+          promises.push(
+            axios
+              .get(url)
+              .then(function (response) {
+                return response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              })
+          );
+        }
+
+        await Promise.all(promises).then(async (res) => {
+          console.log('Preparing...');
+          for (let i = 0; i < res.length; i++) {
+            if (res[i] !== undefined) {
+              for (let z = 0; z < res[i].features.length; z++) {
+                promisesDataArray.push(res[i].features[z]);
               }
             }
           }
-        } catch (error) {
-          console.log(error);
-        }
 
-        if (counter === 0) {
-          filteredPlans = newPlansArr.filter(
+          console.log('Filter...');
+          filteredPlans = promisesDataArray.filter(
             (value, index, self) =>
               index ===
               self.findIndex(
@@ -177,10 +192,21 @@ router.post('/', function (req, res) {
             // }
           }
 
-          convertGeoJsonToShapefile(plansFeatureCollection.features);
+          const featureCollection = await convertGeoJsonToShapefile(
+            plansFeatureCollection.features
+          );
+
+          fs.writeFileSync(
+            __dirname + '/../myshapes/featureCollection.geojson',
+            JSON.stringify(featureCollection)
+          );
 
           console.log('Done');
-        }
+        });
+
+        // console.log(promisesDataArray);
+
+        // if (counter === 0) {}
       }
     }
     res.render('download');

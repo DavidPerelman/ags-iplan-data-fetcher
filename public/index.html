@@ -5,11 +5,50 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://js.arcgis.com/4.27/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.27/"></script>
     <title>Document</title>
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
 </head>
 
 <body>
     <h1>Hello World</h1>
+    <div id="viewDiv"></div>
+    <!-- <script>
+        require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", 'esri/layers/GeoJSONLayer'
+        ], function (esriConfig, Map, MapView, FeatureLayer, GeoJSONLayer) {
+            esriConfig.apiKey = "AAPKda9600806c7847e2a5572fb2e073a56eLG5aIYq-6vMFF4Ha0sSmJPyC7AOQJ_XYQol_OLgxf_P-MuWrzKsiXSBSeZiPlueg";
+
+            const map = new Map({
+                basemap: "arcgis-topographic" // Basemap layer service
+            });
+
+            const view = new MapView({
+                map: map,
+                center: [31.76904, 35.21633], // Longitude, latitude
+                zoom: 12, // Zoom level
+                container: "viewDiv" // Div element
+            });
+
+            //Trailheads feature layer (points)
+            const trailheadsLayer = new FeatureLayer({
+                url: "https://ags.iplan.gov.il/arcgisiplan/rest/services/PlanningPublic/Xplan/MapServer/1"
+            });
+
+            map.add(trailheadsLayer);
+        });
+
+
+    </script> -->
 </body>
 
 </html>
