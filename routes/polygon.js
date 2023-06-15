@@ -17,6 +17,8 @@ const convertGeoJsonToShapefile = require('../lib/geojsonToShapefile');
 const fs = require('fs');
 const converter = require('json-2-csv');
 const { default: axios } = require('axios');
+const { default: axiosRateLimit } = require('axios-rate-limit');
+const { loadDataWithPromiseAll } = require('./utils/loadDataWithPromiseAll');
 
 router.get('/', (req, res) => {
   const polygon_num = req.params.polygon_number;
@@ -54,8 +56,9 @@ router.post('/', function (req, res) {
     if (err) return res.status(500).send(err);
 
     const shapefile = await readShapfile(uploadPath);
+
     if (shapefile) {
-      const convertedCoordinates = convertCoordinatesToLatLong(
+      const convertedCoordinates = await convertCoordinatesToLatLong(
         shapefile.geometry.coordinates[0]
       );
 
@@ -111,7 +114,7 @@ router.post('/', function (req, res) {
         for (let i = 0; i < UTMCoCoordinates.length; i++) {
           const inside = await checkInsideThePolygon(
             UTMCoCoordinates[i],
-            shapefile
+            shapefile.geometry.coordinates
           );
 
           if (inside) {
@@ -119,94 +122,44 @@ router.post('/', function (req, res) {
           }
         }
 
-        let promises = [];
         let promisesDataArray = [];
 
-        console.log('Loading...');
+        counter = coordinatesInside.length;
 
-        for (let i = 0; i < coordinatesInside.length; i++) {
-          const x = coordinatesInside[i][0];
-          const y = coordinatesInside[i][1];
+        // for (let i = 0; i < coordinatesInside.length; i++) {
+        //   console.log((counter -= 1));
 
-          const url = `https://ags.iplan.gov.il/arcgisiplan/rest/services/PlanningPublic/Xplan/MapServer/1/query?f=json&where=&returnGeometry=true&geometry=%7B%22x%22%3A${x}%2C%22y%22%3A${y}%2C%22spatialReference%22%3A%7B%22wkid%22%3A2039%7D%7D&geometryType=esriGeometryPoint&inSR=2039&outFields=pl_number%2Cpl_name%2Cpl_url%2Cpl_area_dunam%2Cquantity_delta_120%2Cstation_desc%2Cpl_date_advertise%2Cpl_date_8%2Cplan_county_name%2Cpl_landuse_string&orderByFields=pl_number&outSR=2039`;
+        //   const x = coordinatesInside[i][0];
+        //   const y = coordinatesInside[i][1];
 
-          promises.push(
-            axios
-              .get(url)
-              .then(function (response) {
-                return response.data;
-              })
-              .catch((err) => {
-                console.log(err);
-              })
-          );
-        }
+        //   if (coordinatesInside[i]) {
+        //     const data = await getPlansByCoordinates(x, y);
+        //     if (data.features) {
+        //       for (let z = 0; z < data.features.length; z++) {
+        //         promisesDataArray.push(data.features[z]);
+        //       }
+        //     }
+        //   }
+        // }
 
-        await Promise.all(promises).then(async (res) => {
-          console.log('Preparing...');
-          for (let i = 0; i < res.length; i++) {
-            if (res[i] !== undefined) {
-              for (let z = 0; z < res[i].features.length; z++) {
-                promisesDataArray.push(res[i].features[z]);
-              }
-            }
-          }
+        // console.log('Loading...');
+        console.log(filteredPlans.length);
 
-          console.log('Filter...');
-          filteredPlans = promisesDataArray.filter(
-            (value, index, self) =>
-              index ===
-              self.findIndex(
-                (t) =>
-                  t.attributes.pl_number === value.attributes.pl_number &&
-                  t.attributes.pl_area_dunam < 15
-              )
-          );
+        const check = await loadDataWithPromiseAll(coordinatesInside);
 
-          console.log(filteredPlans.length);
+        //   const featureCollection = await convertGeoJsonToShapefile(
+        //     plansFeatureCollection.features
+        //   );
 
-          for (let i = 0; i < filteredPlans.length; i++) {
-            // if (filteredPlans[i].attributes.pl_area_dunam < 15) {
-            const feature = {
-              type: 'Feature',
-              geometry: {
-                type: 'Polygon',
-              },
-            };
+        //   fs.writeFileSync(
+        //     __dirname + '/../myshapes/featureCollection.geojson',
+        //     JSON.stringify(featureCollection)
+        //   );
 
-            const url = new URL(filteredPlans[i].attributes.pl_url);
-            const mavatId = url.pathname.slice(7, url.pathname.length - 4);
-            try {
-              const mavatData = await loadDataFromMavat(mavatId);
-              if (mavatData) {
-                filteredPlans[i].attributes.mavat = mavatData.rsQuantities;
-              }
+        //   console.log(filteredPlans.length);
 
-              feature.attributes = filteredPlans[i].attributes;
-              feature.geometry.coordinates = filteredPlans[i].geometry.rings;
-
-              plansFeatureCollection.features.push(feature);
-            } catch (error) {
-              console.log(error);
-            }
-            // }
-          }
-
-          const featureCollection = await convertGeoJsonToShapefile(
-            plansFeatureCollection.features
-          );
-
-          fs.writeFileSync(
-            __dirname + '/../myshapes/featureCollection.geojson',
-            JSON.stringify(featureCollection)
-          );
-
-          console.log('Done');
-        });
-
-        // console.log(promisesDataArray);
-
-        // if (counter === 0) {}
+        //   console.log('Done');
+        // });
       }
     }
     res.render('download');
