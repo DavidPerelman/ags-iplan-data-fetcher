@@ -11,6 +11,7 @@ app.set('view engine', 'ejs');
 
 const planRouter = require('./routes/plan');
 const polygonRouter = require('./routes/polygon');
+const coordinatesRouter = require('./routes/coordinates');
 
 app.post('/upload', function (req, res) {
   let sampleFile;
@@ -35,8 +36,8 @@ app.post('/upload', function (req, res) {
 });
 
 app.use('/plan', planRouter);
-
 app.use('/polygon', polygonRouter);
+app.use('/coordinates', coordinatesRouter);
 
 app.get('/', (req, res) => {
   res.render('index', { text: 'World' });
