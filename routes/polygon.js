@@ -11,14 +11,22 @@ const {
 } = require('../lib/polygon');
 const router = express.Router();
 const _ = require('lodash');
-const { getPlansByCoordinates } = require('../lib/coordinates');
+const {
+  getPlansByCoordinates,
+  loadPlanNumInPolygon,
+} = require('../lib/coordinates');
 const { loadDataFromMavat } = require('../lib/plan');
 const convertGeoJsonToShapefile = require('../lib/geojsonToShapefile');
 const fs = require('fs');
-const converter = require('json-2-csv');
 const { default: axios } = require('axios');
 const { default: axiosRateLimit } = require('axios-rate-limit');
-const { loadDataWithPromiseAll } = require('./utils/loadDataWithPromiseAll');
+const {
+  loadDataWithPromiseAll,
+  loadPlanNumInPolygonWithPromiseAll,
+  loadPlansDataFromMavat,
+} = require('../utils/loadDataWithPromiseAll');
+const filterByUniquePlanNumber = require('../utils/filters');
+const turf = require('@turf/turf');
 
 router.get('/', (req, res) => {
   const polygon_num = req.params.polygon_number;
@@ -40,6 +48,9 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', function (req, res) {
+  const start = new Date().toLocaleTimeString('he-IL');
+  console.log(`${start}`);
+
   let sampleFile;
   let uploadPath;
 
@@ -88,7 +99,7 @@ router.post('/', function (req, res) {
         let coordinatesInside = [];
         let centroidOfPolygonsArray = [];
         let newPlansArr = [];
-        let filteredPlans = [];
+        // let filteredPlans = [];
         let counter = 0;
 
         for (let i = 0; i < splitedPolyon.features.length; i++) {
@@ -126,35 +137,47 @@ router.post('/', function (req, res) {
 
         counter = coordinatesInside.length;
 
-        // for (let i = 0; i < coordinatesInside.length; i++) {
-        //   console.log((counter -= 1));
+        promisesDataArray = await loadPlanNumInPolygonWithPromiseAll(
+          coordinatesInside
+        );
 
-        //   const x = coordinatesInside[i][0];
-        //   const y = coordinatesInside[i][1];
+        for (let i = 0; i < coordinatesInside.length; i++) {
+          console.log((counter -= 1));
 
-        //   if (coordinatesInside[i]) {
-        //     const data = await getPlansByCoordinates(x, y);
-        //     if (data.features) {
-        //       for (let z = 0; z < data.features.length; z++) {
-        //         promisesDataArray.push(data.features[z]);
-        //       }
-        //     }
-        //   }
-        // }
+          const x = coordinatesInside[i][0];
+          const y = coordinatesInside[i][1];
 
-        // console.log('Loading...');
+          const data = await loadPlanNumInPolygon(x, y);
+          if (data.features) {
+            for (let z = 0; z < data.features.length; z++) {
+              promisesDataArray.push(data.features[z]);
+            }
+          }
+        }
+
+        console.log('promisesDataArray');
+        console.log(promisesDataArray.length);
+
+        const filteredPlans = await filterByUniquePlanNumber(promisesDataArray);
+
+        console.log('filteredPlans');
         console.log(filteredPlans.length);
 
-        const check = await loadDataWithPromiseAll(coordinatesInside);
+        const filteredPlansWithMavat = await loadPlansDataFromMavat(
+          filteredPlans
+        );
 
-        //   const featureCollection = await convertGeoJsonToShapefile(
-        //     plansFeatureCollection.features
-        //   );
+        const featureCollection = await convertGeoJsonToShapefile(
+          filteredPlansWithMavat.features
+        );
 
-        //   fs.writeFileSync(
-        //     __dirname + '/../myshapes/featureCollection.geojson',
-        //     JSON.stringify(featureCollection)
-        //   );
+        fs.writeFileSync(
+          __dirname + '/../myshapes/featureCollection.geojson',
+          JSON.stringify(featureCollection)
+        );
+
+        const end = new Date().toLocaleTimeString('he-IL');
+        console.log(`${end}`);
 
         //   console.log(filteredPlans.length);
 

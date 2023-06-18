@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-
 const { getPlanData, loadDataFromMavat } = require('../lib/plan');
+const parseData = require('../utils/parseData');
+const { createPolygon } = require('../lib/polygon');
+const fs = require('fs');
+const { convertPlanGeoJsonToShapefile } = require('../lib/geojsonToShapefile');
 
 router.get('/', (req, res) => {
   res.render('plan');
@@ -14,12 +17,28 @@ router.post('/', async (req, res) => {
     const planData = await getPlanData(plan_num);
 
     if (planData) {
-      const id = planData.features[0].attributes.pl_url.slice(33, 43);
+      const url = new URL(planData.features[0].attributes.pl_url);
+      const mavatId = url.pathname.slice(7, url.pathname.length - 4);
       try {
-        const mavatData = await loadDataFromMavat(id);
+        const mavatData = await loadDataFromMavat(mavatId);
         if (mavatData) {
-          for (let i = 0; i < mavatData.rsQuantities.length; i++) {
-            console.log(mavatData.rsQuantities[i]);
+          const parsedData = await parseData(
+            planData.features[0].attributes,
+            mavatData.rsQuantities
+          );
+
+          const planPolygon = await createPolygon(
+            planData.features[0].geometry.rings[0]
+          );
+
+          if (planPolygon) {
+            planPolygon.attributes = parsedData;
+            const geojson = await convertPlanGeoJsonToShapefile(planPolygon);
+
+            fs.writeFileSync(
+              __dirname + '/../myshapes/featureCollection.geojson',
+              JSON.stringify(geojson)
+            );
           }
         }
       } catch (error) {
@@ -31,11 +50,6 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.log(error);
   }
-});
-
-router.get('/:plan_number', (req, res) => {
-  const plan_num = req.params.plan_number;
-  res.send(`plan: ${plan_num}`);
 });
 
 module.exports = router;
