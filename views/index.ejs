@@ -10,13 +10,21 @@
 </head>
 
 <body>
-    <h1>Coordinates_x</h1>
+    <h1>Coordinates:</h1>
     <form action="/coordinates" method="POST">
         <label for="coordinates_x">
             X: <input type="text" name="coordinates_x" value="<%= locals.coordinates_x %>">
         </label>
         <label for="coordinates_y">
             Y: <input type="text" name="coordinates_y" value="<%= locals.coordinates_y %>">
+        </label>
+        <button type="submit">Submit</button>
+    </form>
+    <br>
+    <h1>Plan:</h1>
+    <form action="/plan" method="POST">
+        <label for="plan_number">
+            <input type="text" name="plan_number" value="<%= locals.plan_number %>">
         </label>
         <button type="submit">Submit</button>
     </form>

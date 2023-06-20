@@ -13,30 +13,46 @@ router.get('/', (req, res) => {
 router.post('/', async (req, res) => {
   const plan_num = req.body.plan_number;
 
+  let geojson = {
+    type: 'FeatureCollection',
+    name: `${dateDtring}_iplans_for_jtmt`,
+    crs: {
+      type: 'name',
+      properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
+    },
+    features: [],
+  };
+
   try {
     const planData = await getPlanData(plan_num);
 
     if (planData) {
-      const url = new URL(planData.features[0].attributes.pl_url);
+      const url = new URL(plansData.features[i].attributes.pl_url);
       const mavatId = url.pathname.slice(7, url.pathname.length - 4);
       try {
         const mavatData = await loadDataFromMavat(mavatId);
         if (mavatData) {
           const parsedData = await parseData(
-            planData.features[0].attributes,
-            mavatData.rsQuantities
+            plansData.features[i].attributes,
+            mavatData.rsQuantities,
+            mavatData.planDetails ? mavatData.planDetails.GOALS : null,
+            mavatData.recExplanation.EXPLANATION
+              ? mavatData.recExplanation.EXPLANATION
+              : null,
+            mavatData.rsTopic.length > 0 ? mavatData.rsTopic[0].ORG_N : null
           );
 
           const planPolygon = await createPolygon(
-            planData.features[0].geometry.rings[0]
+            plansData.features[i].geometry.rings[0]
           );
 
           if (planPolygon) {
-            planPolygon.attributes = parsedData;
-            const geojson = await convertPlanGeoJsonToShapefile(planPolygon);
+            planPolygon.properties = parsedData;
+
+            geojson.features.push(planPolygon);
 
             fs.writeFileSync(
-              __dirname + '/../myshapes/featureCollection.geojson',
+              __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
               JSON.stringify(geojson)
             );
           }
@@ -45,11 +61,14 @@ router.post('/', async (req, res) => {
         console.log(error);
       }
     }
-
-    res.send(`plan: ${plan_num}`);
   } catch (error) {
     console.log(error);
   }
+
+  console.log('done');
+  res.download(
+    __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`
+  );
 });
 
 module.exports = router;

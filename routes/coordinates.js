@@ -4,9 +4,7 @@ const { loadDataFromMavat } = require('../lib/plan');
 const parseData = require('../utils/parseData');
 const { createPolygon } = require('../lib/polygon');
 const fs = require('fs');
-const { convertPlanGeoJsonToShapefile } = require('../lib/geojsonToShapefile');
 const { getPlansByCoordinates } = require('../lib/coordinates');
-const XLSX = require('xlsx');
 const moment = require('moment/moment');
 
 const locale = moment.locale('en-il');
@@ -22,11 +20,20 @@ router.post('/', async (req, res) => {
   const x = req.body.coordinates_x;
   const y = req.body.coordinates_y;
 
+  let geojson = {
+    type: 'FeatureCollection',
+    name: `${dateDtring}_iplans_for_jtmt`,
+    crs: {
+      type: 'name',
+      properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
+    },
+    features: [],
+  };
+
   try {
     const plansData = await getPlansByCoordinates(x, y);
 
     if (plansData) {
-      let aoo = [];
       for (let i = 0; i < plansData.features.length; i++) {
         const url = new URL(plansData.features[i].attributes.pl_url);
         const mavatId = url.pathname.slice(7, url.pathname.length - 4);
@@ -48,11 +55,9 @@ router.post('/', async (req, res) => {
             );
 
             if (planPolygon) {
-              aoo.push(parsedData);
-              planPolygon.properties.Id = i;
               planPolygon.properties = parsedData;
 
-              const geojson = await convertPlanGeoJsonToShapefile(planPolygon);
+              geojson.features.push(planPolygon);
 
               fs.writeFileSync(
                 __dirname +
@@ -60,11 +65,6 @@ router.post('/', async (req, res) => {
                 JSON.stringify(geojson)
               );
             }
-
-            // const worksheet = XLSX.utils.json_to_sheet(aoo);
-            // var wb = XLSX.utils.book_new();
-            // XLSX.utils.book_append_sheet(wb, worksheet, 'Sheet1');
-            // XLSX.writeFile(wb, __dirname + '/../my_xlsx/SheetJSExportAOO.xlsx');
           }
         } catch (error) {
           console.log(error);
@@ -76,11 +76,9 @@ router.post('/', async (req, res) => {
   }
 
   console.log('done');
-  // res.download(__dirname + '/../my_xlsx/SheetJSExportAOO.xlsx');
   res.download(
     __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`
   );
-  // res.download(__dirname + `/../myshapes/${dateDtring}_iplans_for_jtmt.zip`);
 });
 
 module.exports = router;

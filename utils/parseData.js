@@ -253,6 +253,24 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
     }
   }
 
+  if (GOALS) {
+    parsedData.GOALS = GOALS;
+  } else {
+    parsedData.GOALS = null;
+  }
+
+  if (EXPLANATION) {
+    parsedData.EXPLANATION = EXPLANATION;
+  } else {
+    parsedData.EXPLANATION = null;
+  }
+
+  if (ORG_N) {
+    parsedData.ORG_N = ORG_N;
+  } else {
+    parsedData.ORG_N = null;
+  }
+
   return parsedData;
 }
 
