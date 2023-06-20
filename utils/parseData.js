@@ -1,4 +1,4 @@
-async function parseData(planData, mavatData) {
+async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
   let parsedData = {};
 
   const chars = {
@@ -119,6 +119,72 @@ async function parseData(planData, mavatData) {
             (m) => chars[m]
           );
         }
+      } else if (mavatData[i].QUANTITY_CODE === 100) {
+        // חדרי מלון / תיירות (חדר)
+
+        // מצב מאושר*
+        if (mavatData[i].AUTHORISED_QUANTITY === null) {
+          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY =
+            mavatData[i].AUTHORISED_QUANTITY;
+        } else {
+          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY = mavatData[
+            i
+          ].AUTHORISED_QUANTITY.replace(/[+]/g, (m) => chars[m]);
+        }
+
+        // שינוי (+/-) למצב המאושר*
+        if (mavatData[i].AUTHORISED_QUANTITY_ADD === null) {
+          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY_ADD =
+            mavatData[i].AUTHORISED_QUANTITY_ADD;
+        } else {
+          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY_ADD =
+            mavatData[i].AUTHORISED_QUANTITY_ADD.replace(
+              /[+]/g,
+              (m) => chars[m]
+            );
+        }
+
+        // סה"כ
+        if (mavatData[i].IMPLEMENTATION === null) {
+          parsedData.hotel_tourist_rooms_room = mavatData[i].IMPLEMENTATION;
+        } else {
+          parsedData.hotel_tourist_rooms_room = mavatData[
+            i
+          ].IMPLEMENTATION.replace(/[+]/g, (m) => chars[m]);
+        }
+      } else if (mavatData[i].QUANTITY_CODE === 105) {
+        // חדרי מלון / תיירות (מ"ר)
+
+        // מצב מאושר*
+        if (mavatData[i].AUTHORISED_QUANTITY === null) {
+          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY =
+            mavatData[i].AUTHORISED_QUANTITY;
+        } else {
+          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY = mavatData[
+            i
+          ].AUTHORISED_QUANTITY.replace(/[+]/g, (m) => chars[m]);
+        }
+
+        // שינוי (+/-) למצב המאושר*
+        if (mavatData[i].AUTHORISED_QUANTITY_ADD === null) {
+          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY_ADD =
+            mavatData[i].AUTHORISED_QUANTITY_ADD;
+        } else {
+          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY_ADD =
+            mavatData[i].AUTHORISED_QUANTITY_ADD.replace(
+              /[+]/g,
+              (m) => chars[m]
+            );
+        }
+
+        // סה"כ
+        if (mavatData[i].IMPLEMENTATION === null) {
+          parsedData.hotel_tourist_rooms_sqm = mavatData[i].IMPLEMENTATION;
+        } else {
+          parsedData.hotel_tourist_rooms_sqm = mavatData[
+            i
+          ].IMPLEMENTATION.replace(/[+]/g, (m) => chars[m]);
+        }
       } else if (mavatData[i].QUANTITY_CODE === 120) {
         // מגורים (יח"ד)
 
@@ -186,6 +252,10 @@ async function parseData(planData, mavatData) {
       }
     }
   }
+
+  parsedData.GOALS = GOALS;
+  parsedData.EXPLANATION = EXPLANATION;
+  parsedData.ORG_N = ORG_N;
 
   return parsedData;
 }
