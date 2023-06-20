@@ -1,20 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { getPlanData, loadDataFromMavat } = require('../lib/plan');
+const { loadDataFromMavat } = require('../lib/plan');
 const parseData = require('../utils/parseData');
-const {
-  createPolygon,
-  convertCoordinatesToLatLong,
-} = require('../lib/polygon');
+const { createPolygon } = require('../lib/polygon');
 const fs = require('fs');
 const { convertPlanGeoJsonToShapefile } = require('../lib/geojsonToShapefile');
 const { getPlansByCoordinates } = require('../lib/coordinates');
 const XLSX = require('xlsx');
-const { default: ogr2ogr } = require('ogr2ogr');
-const {
-  convertGeojsonToEsriShapefile,
-} = require('../utils/geojsonToEsriShapefile');
-const { createGeojsonFile } = require('../utils/createGeojsonFile');
+const moment = require('moment/moment');
+
+const locale = moment.locale('en-il');
+const date = moment().format('L');
+
+let dateDtring = date.replaceAll('/', '');
 
 router.get('/', (req, res) => {
   res.render('coordinates');
@@ -38,9 +36,11 @@ router.post('/', async (req, res) => {
             const parsedData = await parseData(
               plansData.features[i].attributes,
               mavatData.rsQuantities,
-              mavatData.planDetails.GOALS,
-              mavatData.recExplanation.EXPLANATION,
-              mavatData.rsTopic[0].ORG_N
+              mavatData.planDetails ? mavatData.planDetails.GOALS : null,
+              mavatData.recExplanation.EXPLANATION
+                ? mavatData.recExplanation.EXPLANATION
+                : null,
+              mavatData.rsTopic.length > 0 ? mavatData.rsTopic[0].ORG_N : null
             );
 
             const planPolygon = await createPolygon(
@@ -49,20 +49,22 @@ router.post('/', async (req, res) => {
 
             if (planPolygon) {
               aoo.push(parsedData);
-              // planPolygon.properties = parsedData;
+              planPolygon.properties.Id = i;
+              planPolygon.properties = parsedData;
 
-              // const geojson = await convertPlanGeoJsonToShapefile(planPolygon);
+              const geojson = await convertPlanGeoJsonToShapefile(planPolygon);
 
-              // fs.writeFileSync(
-              //   __dirname + '/../myGeojson/featureCollection.geojson',
-              //   JSON.stringify(geojson)
-              // );
+              fs.writeFileSync(
+                __dirname +
+                  `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
+                JSON.stringify(geojson)
+              );
             }
 
-            const worksheet = XLSX.utils.json_to_sheet(aoo);
-            var wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, worksheet, 'Sheet1');
-            XLSX.writeFile(wb, __dirname + '/../my_xlsx/SheetJSExportAOO.xlsx');
+            // const worksheet = XLSX.utils.json_to_sheet(aoo);
+            // var wb = XLSX.utils.book_new();
+            // XLSX.utils.book_append_sheet(wb, worksheet, 'Sheet1');
+            // XLSX.writeFile(wb, __dirname + '/../my_xlsx/SheetJSExportAOO.xlsx');
           }
         } catch (error) {
           console.log(error);
@@ -74,9 +76,11 @@ router.post('/', async (req, res) => {
   }
 
   console.log('done');
-  res.download(__dirname + '/../my_xlsx/SheetJSExportAOO.xlsx');
-  // res.download(__dirname + '/../myshapes/featureCollection.geojson');
-  // res.download(__dirname + '/../myshapes/test.zip');
+  // res.download(__dirname + '/../my_xlsx/SheetJSExportAOO.xlsx');
+  res.download(
+    __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`
+  );
+  // res.download(__dirname + `/../myshapes/${dateDtring}_iplans_for_jtmt.zip`);
 });
 
 module.exports = router;

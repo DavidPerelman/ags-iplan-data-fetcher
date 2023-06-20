@@ -253,10 +253,6 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
     }
   }
 
-  parsedData.GOALS = GOALS;
-  parsedData.EXPLANATION = EXPLANATION;
-  parsedData.ORG_N = ORG_N;
-
   return parsedData;
 }
 
