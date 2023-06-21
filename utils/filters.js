@@ -6,10 +6,6 @@ async function filterByUniquePlanNumber(promisesDataArray) {
       ) === index
   );
 
-  // const dunamFilter = planNumFilter.filter(
-  //   (item) => item.attributes.pl_area_dunam < 15
-  // );
-
   return planNumFilter;
 }
 

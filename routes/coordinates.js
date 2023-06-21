@@ -3,9 +3,10 @@ const router = express.Router();
 const { loadDataFromMavat } = require('../lib/plan');
 const parseData = require('../utils/parseData');
 const { createPolygon } = require('../lib/polygon');
-const fs = require('fs');
+// const fs = require('fs');
 const { getPlansByCoordinates } = require('../lib/coordinates');
 const moment = require('moment/moment');
+const { createGeojsonFile } = require('../utils/createGeojsonFile');
 
 const locale = moment.locale('en-il');
 const date = moment().format('L');
@@ -20,15 +21,16 @@ router.post('/', async (req, res) => {
   const x = req.body.coordinates_x;
   const y = req.body.coordinates_y;
 
-  let geojson = {
-    type: 'FeatureCollection',
-    name: `${dateDtring}_iplans_for_jtmt`,
-    crs: {
-      type: 'name',
-      properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
-    },
-    features: [],
-  };
+  let features = [];
+  // let geojson = {
+  //   type: 'FeatureCollection',
+  //   name: `${dateDtring}_iplans_for_jtmt`,
+  //   crs: {
+  //     type: 'name',
+  //     properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
+  //   },
+  //   features: [],
+  // };
 
   try {
     const plansData = await getPlansByCoordinates(x, y);
@@ -57,13 +59,17 @@ router.post('/', async (req, res) => {
             if (planPolygon) {
               planPolygon.properties = parsedData;
 
-              geojson.features.push(planPolygon);
+              features.push(planPolygon);
 
-              fs.writeFileSync(
-                __dirname +
-                  `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
-                JSON.stringify(geojson)
-              );
+              const geojson = await createGeojsonFile(features);
+
+              console.log(geojson);
+
+              // fs.writeFileSync(
+              //   __dirname +
+              //     `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
+              //   JSON.stringify(geojson)
+              // );
             }
           }
         } catch (error) {

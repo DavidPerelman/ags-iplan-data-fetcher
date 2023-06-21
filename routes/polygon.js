@@ -1,39 +1,25 @@
 const express = require('express');
 const moment = require('moment/moment');
 const readShapfile = require('../lib/shapefile');
-const {
-  convertCoordinatesToLatLong,
-  convertCoordinatesToUTM,
-  splitPolygon,
-  convertLatLongToIsraeliUTM,
-  getCentroidOfPolygon,
-  checkInsideThePolygon,
-  getPlansBybboxPolygon,
-  createPolygon,
-} = require('../lib/polygon');
 const router = express.Router();
-const _ = require('lodash');
-const {
-  getPlansByCoordinates,
-  loadPlanNumInPolygon,
-} = require('../lib/coordinates');
+const { getPlansByCoordinates } = require('../lib/coordinates');
 const { loadDataFromMavat } = require('../lib/plan');
-const convertGeoJsonToShapefile = require('../lib/geojsonToShapefile');
-const fs = require('fs');
-const { default: axios } = require('axios');
-const { default: axiosRateLimit } = require('axios-rate-limit');
-const {
-  loadDataWithPromiseAll,
-  loadPlanNumInPolygonWithPromiseAll,
-  loadPlansDataFromMavat,
-} = require('../utils/loadDataWithPromiseAll');
+// const fs = require('fs');
 const filterByUniquePlanNumber = require('../utils/filters');
 const turf = require('@turf/turf');
 const parseData = require('../utils/parseData');
+const {
+  convertCoordinatesToLatLong,
+  convertCoordinatesToUTM,
+  getCentroidOfPolygon,
+  createPolygon,
+  checkInsideThePolygon,
+} = require('../utils/polygon');
+const { createGeojsonFile } = require('../utils/createGeojsonFile');
+const getPlansBybboxPolygon = require('../lib/polygon');
 
 const locale = moment.locale('en-il');
 const date = moment().format('L');
-
 let dateDtring = date.replaceAll('/', '');
 
 router.get('/', (req, res) => {
@@ -114,9 +100,13 @@ router.post('/', function (req, res) {
       }
 
       for (let i = 0; i < centroidOfPolygonsArray.length; i++) {
-        const pt = turf.point(centroidOfPolygonsArray[i].geometry.coordinates);
-        const poly = turf.polygon([convertedCoordinates]);
-        const inside = turf.booleanPointInPolygon(pt, poly);
+        const inside = await checkInsideThePolygon(
+          centroidOfPolygonsArray[i].geometry.coordinates,
+          [convertedCoordinates]
+        );
+        // const pt = turf.point(centroidOfPolygonsArray[i].geometry.coordinates);
+        // const poly = turf.polygon([convertedCoordinates]);
+        // const inside = turf.booleanPointInPolygon(pt, poly);
         if (inside) {
           coordinatesInside.push(
             centroidOfPolygonsArray[i].geometry.coordinates
@@ -129,16 +119,17 @@ router.post('/', function (req, res) {
       );
 
       let plansArr = [];
+      let features = [];
 
-      let geojson = {
-        type: 'FeatureCollection',
-        name: `${dateDtring}_iplans_for_jtmt`,
-        crs: {
-          type: 'name',
-          properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
-        },
-        features: [],
-      };
+      // let geojson = {
+      //   type: 'FeatureCollection',
+      //   name: `${dateDtring}_iplans_for_jtmt`,
+      //   crs: {
+      //     type: 'name',
+      //     properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
+      //   },
+      //   features: [],
+      // };
 
       for (let i = 0; i < coordinatesInsideUTMCoCoordinates.length; i++) {
         try {
@@ -182,13 +173,16 @@ router.post('/', function (req, res) {
             if (planPolygon) {
               planPolygon.properties = parsedData;
 
-              geojson.features.push(planPolygon);
+              features.push(planPolygon);
 
-              fs.writeFileSync(
-                __dirname +
-                  `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
-                JSON.stringify(geojson)
-              );
+              const geojson = await createGeojsonFile(features);
+
+              console.log(geojson);
+              // fs.writeFileSync(
+              //   __dirname +
+              //     `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
+              //   JSON.stringify(geojson)
+              // );
             }
           }
         } catch (error) {
