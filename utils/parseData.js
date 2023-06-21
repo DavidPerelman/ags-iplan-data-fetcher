@@ -249,6 +249,37 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
             (m) => chars[m]
           );
         }
+      } else if (mavatData[i].QUANTITY_CODE === 150) {
+        // דירות קטנות (יח"ד)
+
+        // מצב מאושר*
+        if (mavatData[i].AUTHORISED_QUANTITY === null) {
+          parsedData.small_apartments_units_AUTHORISED_QUANTITY =
+            mavatData[i].AUTHORISED_QUANTITY;
+        } else {
+          parsedData.small_apartments_units_AUTHORISED_QUANTITY = mavatData[
+            i
+          ].AUTHORISED_QUANTITY.replace(/[+]/g, (m) => chars[m]);
+        }
+
+        // שינוי (+/-) למצב המאושר*
+        if (mavatData[i].AUTHORISED_QUANTITY_ADD === null) {
+          parsedData.small_apartments_units_AUTHORISED_QUANTITY_ADD =
+            mavatData[i].AUTHORISED_QUANTITY_ADD;
+        } else {
+          parsedData.small_apartments_units_AUTHORISED_QUANTITY_ADD = mavatData[
+            i
+          ].AUTHORISED_QUANTITY_ADD.replace(/[+]/g, (m) => chars[m]);
+        }
+
+        // סה"כ
+        if (mavatData[i].IMPLEMENTATION === null) {
+          parsedData.small_apartments_units = mavatData[i].IMPLEMENTATION;
+        } else {
+          parsedData.small_apartments_units = mavatData[
+            i
+          ].IMPLEMENTATION.replace(/[+]/g, (m) => chars[m]);
+        }
       }
     }
   }
