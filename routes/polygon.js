@@ -8,6 +8,8 @@ const {
   convertLatLongToIsraeliUTM,
   getCentroidOfPolygon,
   checkInsideThePolygon,
+  getPlansBybboxPolygon,
+  createPolygon,
 } = require('../lib/polygon');
 const router = express.Router();
 const _ = require('lodash');
@@ -27,6 +29,12 @@ const {
 } = require('../utils/loadDataWithPromiseAll');
 const filterByUniquePlanNumber = require('../utils/filters');
 const turf = require('@turf/turf');
+const parseData = require('../utils/parseData');
+
+const locale = moment.locale('en-il');
+const date = moment().format('L');
+
+let dateDtring = date.replaceAll('/', '');
 
 router.get('/', (req, res) => {
   const polygon_num = req.params.polygon_number;
@@ -53,6 +61,8 @@ router.post('/', function (req, res) {
 
   let sampleFile;
   let uploadPath;
+  let centroidOfPolygonsArray = [];
+  let coordinatesInside = [];
 
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
@@ -73,119 +83,123 @@ router.post('/', function (req, res) {
         shapefile.geometry.coordinates[0]
       );
 
-      if (convertedCoordinates) {
-        let bigPolygon = {
-          type: 'FeatureCollection',
-          features: [
-            {
-              type: 'Feature',
-              properties: {},
-              geometry: {
-                type: 'Polygon',
-                coordinates: [await convertedCoordinates],
-              },
-            },
-          ],
-        };
+      var line = turf.lineString(convertedCoordinates);
+      var bbox = turf.bbox(line);
+      var bboxPolygon = turf.bboxPolygon(bbox);
 
-        const splitedPolyon = await splitPolygon(bigPolygon);
+      const UTMCoCoordinates = await convertCoordinatesToUTM(
+        bboxPolygon.geometry.coordinates[0]
+      );
 
-        let plansFeatureCollection = {
-          type: 'FeatureCollection',
-          features: [],
-        };
+      if (UTMCoCoordinates) {
+        const data = await getPlansBybboxPolygon(
+          UTMCoCoordinates[0][0],
+          UTMCoCoordinates[0][1],
+          UTMCoCoordinates[2][0],
+          UTMCoCoordinates[2][1]
+        );
 
-        let splitedPolyonsArray = [];
-        let coordinatesInside = [];
-        let centroidOfPolygonsArray = [];
-        let newPlansArr = [];
-        // let filteredPlans = [];
-        let counter = 0;
+        for (let i = 0; i < data.features.length; i++) {
+          const convertedCoordinates = await convertCoordinatesToLatLong(
+            data.features[i].geometry.rings[0]
+          );
 
-        for (let i = 0; i < splitedPolyon.features.length; i++) {
-          const polygon = splitedPolyon.features[i].geometry.coordinates[0];
-
-          const centroidOfPolygon = await getCentroidOfPolygon(polygon);
-          centroidOfPolygonsArray.push(centroidOfPolygon);
+          if (convertedCoordinates) {
+            const centroidOfPolygon = await getCentroidOfPolygon(
+              convertedCoordinates
+            );
+            centroidOfPolygonsArray.push(centroidOfPolygon);
+          }
         }
+      }
 
-        for (let i = 0; i < centroidOfPolygonsArray.length; i++) {
-          splitedPolyonsArray.push(
+      for (let i = 0; i < centroidOfPolygonsArray.length; i++) {
+        const pt = turf.point(centroidOfPolygonsArray[i].geometry.coordinates);
+        const poly = turf.polygon([convertedCoordinates]);
+        const inside = turf.booleanPointInPolygon(pt, poly);
+        if (inside) {
+          coordinatesInside.push(
             centroidOfPolygonsArray[i].geometry.coordinates
           );
         }
+      }
 
-        let unique = Array.from(
-          new Set(splitedPolyonsArray.map((a) => a.join('|'))),
-          (s) => s.split('|').map(Number)
-        );
+      const coordinatesInsideUTMCoCoordinates = await convertCoordinatesToUTM(
+        coordinatesInside
+      );
 
-        const UTMCoCoordinates = await convertCoordinatesToUTM(unique);
+      let plansArr = [];
 
-        for (let i = 0; i < UTMCoCoordinates.length; i++) {
-          const inside = await checkInsideThePolygon(
-            UTMCoCoordinates[i],
-            shapefile.geometry.coordinates
+      let geojson = {
+        type: 'FeatureCollection',
+        name: `${dateDtring}_iplans_for_jtmt`,
+        crs: {
+          type: 'name',
+          properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
+        },
+        features: [],
+      };
+
+      for (let i = 0; i < coordinatesInsideUTMCoCoordinates.length; i++) {
+        try {
+          const planData = await getPlansByCoordinates(
+            coordinatesInsideUTMCoCoordinates[i][0],
+            coordinatesInsideUTMCoCoordinates[i][1]
           );
 
-          if (inside) {
-            coordinatesInside.push(UTMCoCoordinates[i]);
+          for (let z = 0; z < planData.features.length; z++) {
+            plansArr.push(planData.features[z]);
           }
+
+          console.log(i);
+        } catch (error) {
+          console.log(error);
         }
+      }
 
-        let promisesDataArray = [];
+      const filteredPlans = await filterByUniquePlanNumber(plansArr);
 
-        counter = coordinatesInside.length;
+      for (let i = 0; i < filteredPlans.length; i++) {
+        const url = new URL(filteredPlans[i].attributes.pl_url);
+        const mavatId = url.pathname.slice(7, url.pathname.length - 4);
+        try {
+          const mavatData = await loadDataFromMavat(mavatId);
+          if (mavatData) {
+            const parsedData = await parseData(
+              filteredPlans[i].attributes,
+              mavatData.rsQuantities,
+              mavatData.planDetails ? mavatData.planDetails.GOALS : null,
+              mavatData.recExplanation.EXPLANATION
+                ? mavatData.recExplanation.EXPLANATION
+                : null,
+              mavatData.rsTopic.length > 0 ? mavatData.rsTopic[0].ORG_N : null
+            );
 
-        promisesDataArray = await loadPlanNumInPolygonWithPromiseAll(
-          coordinatesInside
-        );
+            const planPolygon = await createPolygon(
+              filteredPlans[i].geometry.rings[0]
+            );
 
-        for (let i = 0; i < coordinatesInside.length; i++) {
-          console.log((counter -= 1));
+            if (planPolygon) {
+              planPolygon.properties = parsedData;
 
-          const x = coordinatesInside[i][0];
-          const y = coordinatesInside[i][1];
+              geojson.features.push(planPolygon);
 
-          const data = await loadPlanNumInPolygon(x, y);
-          if (data.features) {
-            for (let z = 0; z < data.features.length; z++) {
-              promisesDataArray.push(data.features[z]);
+              fs.writeFileSync(
+                __dirname +
+                  `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
+                JSON.stringify(geojson)
+              );
             }
           }
+        } catch (error) {
+          console.log(error);
         }
-
-        console.log('promisesDataArray');
-        console.log(promisesDataArray.length);
-
-        const filteredPlans = await filterByUniquePlanNumber(promisesDataArray);
-
-        console.log('filteredPlans');
-        console.log(filteredPlans.length);
-
-        const filteredPlansWithMavat = await loadPlansDataFromMavat(
-          filteredPlans
-        );
-
-        const featureCollection = await convertGeoJsonToShapefile(
-          filteredPlansWithMavat.features
-        );
-
-        fs.writeFileSync(
-          __dirname + '/../myshapes/featureCollection.geojson',
-          JSON.stringify(featureCollection)
-        );
-
-        const end = new Date().toLocaleTimeString('he-IL');
-        console.log(`${end}`);
-
-        //   console.log(filteredPlans.length);
-
-        //   console.log('Done');
-        // });
       }
     }
-    res.render('download');
+    console.log('done');
+    res.download(
+      __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`
+    );
   });
 });
 
