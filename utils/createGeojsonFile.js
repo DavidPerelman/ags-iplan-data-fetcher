@@ -13,7 +13,7 @@ async function createGeojsonFile(features) {
       type: 'name',
       properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
     },
-    features: [features],
+    features: features,
   };
 
   fs.writeFileSync(

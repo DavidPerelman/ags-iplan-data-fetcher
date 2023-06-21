@@ -175,9 +175,6 @@ router.post('/', function (req, res) {
 
               features.push(planPolygon);
 
-              const geojson = await createGeojsonFile(features);
-
-              console.log(geojson);
               // fs.writeFileSync(
               //   __dirname +
               //     `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
@@ -189,6 +186,10 @@ router.post('/', function (req, res) {
           console.log(error);
         }
       }
+
+      const geojson = await createGeojsonFile(features);
+
+      console.log(geojson);
     }
     console.log('done');
     res.download(
