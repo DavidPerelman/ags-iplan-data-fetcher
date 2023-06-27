@@ -7,20 +7,25 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Front
+// Setup ejs as front
 app.set('view engine', 'ejs');
 
 // Routes
+// Plan router
 const planRouter = require('./routes/plan');
-const polygonRouter = require('./routes/polygon');
-const coordinatesRouter = require('./routes/coordinates');
-
 app.use('/plan', planRouter);
+
+// Polygon router
+const polygonRouter = require('./routes/polygon');
 app.use('/polygon', polygonRouter);
+
+// Coordinates router
+const coordinatesRouter = require('./routes/coordinates');
 app.use('/coordinates', coordinatesRouter);
 
+// Render home page
 app.get('/', (req, res) => {
-  res.render('index', { text: 'World' });
+  res.render('index');
 });
 
 app.listen(3000, () => {
