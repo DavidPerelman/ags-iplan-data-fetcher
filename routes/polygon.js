@@ -4,7 +4,6 @@ const readShapfile = require('../lib/shapefile');
 const router = express.Router();
 const { getPlansByCoordinates } = require('../lib/coordinates');
 const { loadDataFromMavat } = require('../lib/plan');
-// const fs = require('fs');
 const filterByUniquePlanNumber = require('../utils/filters');
 const turf = require('@turf/turf');
 const parseData = require('../utils/parseData');
@@ -33,9 +32,6 @@ router.get('/', (req, res) => {
   const file_name = `${mystring}_polygon.shp`;
 
   try {
-    // res
-    //   .status(200)
-    //   .json({ success: true, message: 'success!', file_name: file_name });
   } catch (error) {
     console.log(error);
   }
@@ -104,9 +100,7 @@ router.post('/', function (req, res) {
           centroidOfPolygonsArray[i].geometry.coordinates,
           [convertedCoordinates]
         );
-        // const pt = turf.point(centroidOfPolygonsArray[i].geometry.coordinates);
-        // const poly = turf.polygon([convertedCoordinates]);
-        // const inside = turf.booleanPointInPolygon(pt, poly);
+
         if (inside) {
           coordinatesInside.push(
             centroidOfPolygonsArray[i].geometry.coordinates
@@ -120,16 +114,6 @@ router.post('/', function (req, res) {
 
       let plansArr = [];
       let features = [];
-
-      // let geojson = {
-      //   type: 'FeatureCollection',
-      //   name: `${dateDtring}_iplans_for_jtmt`,
-      //   crs: {
-      //     type: 'name',
-      //     properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
-      //   },
-      //   features: [],
-      // };
 
       for (let i = 0; i < coordinatesInsideUTMCoCoordinates.length; i++) {
         try {
@@ -174,12 +158,6 @@ router.post('/', function (req, res) {
               planPolygon.properties = parsedData;
 
               features.push(planPolygon);
-
-              // fs.writeFileSync(
-              //   __dirname +
-              //     `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
-              //   JSON.stringify(geojson)
-              // );
             }
           }
         } catch (error) {
