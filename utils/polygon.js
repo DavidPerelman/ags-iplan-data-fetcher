@@ -6,6 +6,7 @@ const utmProjection =
   '+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +units=m +no_defs';
 const latLongProjection = '+proj=longlat +datum=WGS84 +no_defs';
 
+// Convert Israeli UTM to LatLong
 async function convertCoordinatesToLatLong(coordinates) {
   let newCoordinatesArray = [];
 
@@ -27,24 +28,24 @@ async function convertCoordinatesToLatLong(coordinates) {
     return [latitude, longitude];
   }
 
+  // Loop through all coordinates that accepted
   for (let i = 0; i < coordinates.length; i++) {
+    // Convert coordinates
     const newCoordinates = convertIsraeliUTMToLatLong(
       coordinates[i][0],
       coordinates[i][1]
     );
+
+    // Push them to array
     newCoordinatesArray.push(newCoordinates);
   }
 
   return newCoordinatesArray;
 }
 
+// Convert LatLong to Israeli UTM
 async function convertCoordinatesToUTM(coordinates) {
   let newCoordinatesArray = [];
-
-  // Define the projection parameters for LatLong (WGS84) and Israeli UTM (ITM)
-  var latLongProjection = '+proj=longlat +datum=WGS84 +no_defs';
-  var utmProjection =
-    '+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +units=m +no_defs';
 
   // Function to convert LatLong to Israeli UTM
   function convertLatLongToIsraeliUTM(latitude, longitude) {
@@ -64,50 +65,42 @@ async function convertCoordinatesToUTM(coordinates) {
     return [easting, northing];
   }
 
+  // Loop through all coordinates that accepted
   for (let i = 0; i < coordinates.length; i++) {
+    // Convert coordinates
     const newCoordinates = convertLatLongToIsraeliUTM(
       coordinates[i][0],
       coordinates[i][1]
     );
+    // Push them to array
     newCoordinatesArray.push(newCoordinates);
   }
 
   return newCoordinatesArray;
 }
 
-// async function splitPolygon(polygon) {
-//   let bbox = turf.bbox(polygon);
-
-//   let cellWidth = 0.01;
-//   let cellHeight = 0.01;
-
-//   let bufferedBbox = turf.bbox(
-//     turf.buffer(polygon, cellWidth, { units: 'kilometers' })
-//   );
-//   let options = { units: 'kilometers', mask: polygon };
-//   let squareGrid = turf.squareGrid(bufferedBbox, cellWidth, options);
-
-//   return squareGrid;
-// }
-
+// Get centroid of polygon
 async function getCentroidOfPolygon(polygon) {
+  // https://turfjs.org/docs/#centroid
   var pturfPolygon = turf.polygon([polygon]);
-
   var centroid = turf.centroid(pturfPolygon);
 
   return centroid;
 }
 
+// Check inside the polygon
 async function checkInsideThePolygon(point, polygon) {
+  // https://turfjs.org/docs/#booleanPointInPolygon
   const pt = turf.point(point);
   const poly = turf.polygon(polygon);
-
   const inside = turf.booleanPointInPolygon(pt, poly);
 
   return inside;
 }
 
+// Create polygon
 async function createPolygon(planRings) {
+  // https://turfjs.org/docs/#lineToPolygon
   const line = turf.lineString(planRings);
   const polygon = turf.lineToPolygon(line);
 

@@ -54,6 +54,7 @@ router.post('/', function (req, res) {
       );
 
       // Get the bounding box of the polygon
+      // https://turfjs.org/docs/#bboxPolygon
       var line = turf.lineString(convertedCoordinates);
       var bbox = turf.bbox(line);
       var bboxPolygon = turf.bboxPolygon(bbox);
@@ -88,6 +89,7 @@ router.post('/', function (req, res) {
               convertedCoordinates
             );
 
+            // Create centroids of polygon's plan wuth plan number
             let centroidObj = {
               plan: data.features[i].attributes.pl_number,
               centroidOfPolygon: centroidOfPolygon,
@@ -114,13 +116,15 @@ router.post('/', function (req, res) {
 
       let filteredPlans = { features: [] };
 
-      // Filter plans that not inside user polygon
+      // Loop through all plan array
       for (let i = 0; i < unFilteredPlansData.length; i++) {
+        // Check if plan number inside plans that inside polygon
         if (
           plansNumbersInside.includes(
             unFilteredPlansData[i].attributes.pl_number
           )
         ) {
+          // Push to plans that inside polygon
           filteredPlans.features.push(unFilteredPlansData[i]);
         }
       }
@@ -134,6 +138,7 @@ router.post('/', function (req, res) {
       console.log(geojson);
     }
     console.log('done');
+    // Send geojson for user
     res.download(
       __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`
     );

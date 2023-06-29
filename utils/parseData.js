@@ -5,6 +5,7 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
     '+': '',
   };
 
+  // Parse plan data
   if (planData) {
     for (const property in planData) {
       if (property === 'pl_name') {
@@ -21,7 +22,9 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
     }
   }
 
+  // Parse mavat data
   if (mavatData) {
+    // Quantitative data
     for (let i = 0; i < mavatData.length; i++) {
       if (mavatData[i].QUANTITY_CODE === 60) {
         // תעסוקה (מ"ר)
@@ -317,18 +320,21 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
     }
   }
 
+  // Goals
   if (GOALS) {
     parsedData.GOALS = GOALS;
   } else {
     parsedData.GOALS = null;
   }
 
+  // Explanation
   if (EXPLANATION) {
     parsedData.EXPLANATION = EXPLANATION;
   } else {
     parsedData.EXPLANATION = null;
   }
 
+  // Related plans
   if (ORG_N) {
     parsedData.ORG_N = ORG_N;
   } else {

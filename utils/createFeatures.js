@@ -55,6 +55,7 @@ async function createFeatures(data) {
     }
   }
 
+  // Return features
   return features;
 }
 
