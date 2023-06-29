@@ -37,10 +37,10 @@ router.post('/', async (req, res) => {
         planPolygon = await createPolygon(
           plansData.features[i].geometry.rings[0]
         );
-      }
 
-      planPolygon.properties = polygonProperties;
-      features.push(planPolygon);
+        planPolygon.properties = polygonProperties;
+        features.push(planPolygon);
+      }
 
       // Create geojson file
       const geojson = await createGeojsonFile(features);

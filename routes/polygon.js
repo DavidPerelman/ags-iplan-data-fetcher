@@ -8,10 +8,11 @@ const {
   convertCoordinatesToUTM,
   getCentroidOfPolygon,
   checkInsideThePolygon,
+  createPolygon,
 } = require('../utils/polygon');
 const { createGeojsonFile } = require('../utils/createGeojsonFile');
 const getPlansBybboxPolygon = require('../lib/polygon');
-const createFeatures = require('../utils/createFeatures');
+const createProperties = require('../utils/createProperties');
 
 // Date setting
 const locale = moment.locale('en-il');
@@ -129,13 +130,31 @@ router.post('/', function (req, res) {
         }
       }
 
-      // Create features of plans
-      const features = await createFeatures(filteredPlans);
+      let polygonProperties;
+      let planPolygon;
+
+      // Setup empty array of features
+      let features = [];
+
+      for (let i = 0; i < filteredPlans.features.length; i++) {
+        polygonProperties = await createProperties(
+          filteredPlans.features[i].attributes
+        );
+
+        // Create polygon from the plan rings
+        planPolygon = await createPolygon(
+          filteredPlans.features[i].geometry.rings[0]
+        );
+
+        planPolygon.properties = polygonProperties;
+        features.push(planPolygon);
+      }
+
+      // // Create features of plans
+      // const features = await createFeatures(filteredPlans);
 
       // Create geojson file
       const geojson = await createGeojsonFile(features);
-
-      console.log(geojson);
     }
     console.log('done');
     // Send geojson for user
