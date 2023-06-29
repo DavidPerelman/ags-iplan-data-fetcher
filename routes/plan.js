@@ -3,7 +3,8 @@ const router = express.Router();
 const { getPlanData } = require('../lib/plan');
 const { createGeojsonFile } = require('../utils/createGeojsonFile');
 const moment = require('moment/moment');
-const createFeatures = require('../utils/createFeatures');
+const createProperties = require('../utils/createProperties');
+const { createPolygon } = require('../utils/polygon');
 
 // Date setting
 const locale = moment.locale('en-il');
@@ -18,10 +19,27 @@ router.post('/', async (req, res) => {
     // Get the data of plan from XPLAN
     const planData = await getPlanData(plan_num);
 
+    let polygonProperties;
+    let planPolygon;
+
+    // Setup empty array of features
+    let features = [];
+
     // If plan data be accepted
     if (planData) {
-      // Create feature of plan
-      const features = await createFeatures(planData);
+      for (let i = 0; i < planData.features.length; i++) {
+        polygonProperties = await createProperties(
+          planData.features[i].attributes
+        );
+
+        // Create polygon from the plan rings
+        planPolygon = await createPolygon(
+          planData.features[i].geometry.rings[0]
+        );
+      }
+
+      planPolygon.properties = polygonProperties;
+      features.push(planPolygon);
 
       // Create geojson file
       const geojson = await createGeojsonFile(features);
