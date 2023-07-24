@@ -21,11 +21,14 @@ router.post('/', async (req, res) => {
     // Get the data of plan from XPLAN
     const plansData = await getPlansByCoordinates(x, y);
 
-    let polygonProperties;
-    let planPolygon;
-
     // Setup empty array of features
     let features = [];
+
+    // Setup empty polygon object
+    let planPolygon = {};
+
+    // Setup empty polygon properties object
+    let polygonProperties = {};
 
     if (plansData) {
       for (let i = 0; i < plansData.features.length; i++) {

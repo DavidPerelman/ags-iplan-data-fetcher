@@ -130,11 +130,14 @@ router.post('/', function (req, res) {
         }
       }
 
-      let polygonProperties;
-      let planPolygon;
-
       // Setup empty array of features
       let features = [];
+
+      // Setup empty polygon object
+      let planPolygon = {};
+
+      // Setup empty polygon properties object
+      let polygonProperties = {};
 
       for (let i = 0; i < filteredPlans.features.length; i++) {
         polygonProperties = await createProperties(
@@ -149,9 +152,6 @@ router.post('/', function (req, res) {
         planPolygon.properties = polygonProperties;
         features.push(planPolygon);
       }
-
-      // // Create features of plans
-      // const features = await createFeatures(filteredPlans);
 
       // Create geojson file
       const geojson = await createGeojsonFile(features);
