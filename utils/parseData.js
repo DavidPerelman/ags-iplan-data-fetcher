@@ -127,20 +127,20 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
 
         // מצב מאושר*
         if (mavatData[i].AUTHORISED_QUANTITY === null) {
-          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY =
+          parsedData.hotel_tourist_rooms_room_AUTHORISED_QUANTITY =
             mavatData[i].AUTHORISED_QUANTITY;
         } else {
-          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY = mavatData[
+          parsedData.hotel_tourist_rooms_room_AUTHORISED_QUANTITY = mavatData[
             i
           ].AUTHORISED_QUANTITY.replace(/[+]/g, (m) => chars[m]);
         }
 
         // שינוי (+/-) למצב המאושר*
         if (mavatData[i].AUTHORISED_QUANTITY_ADD === null) {
-          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY_ADD =
+          parsedData.hotel_tourist_rooms_room_AUTHORISED_QUANTITY_ADD =
             mavatData[i].AUTHORISED_QUANTITY_ADD;
         } else {
-          parsedData.hotel_tourist_rooms_sqm_AUTHORISED_QUANTITY_ADD =
+          parsedData.hotel_tourist_rooms_room_AUTHORISED_QUANTITY_ADD =
             mavatData[i].AUTHORISED_QUANTITY_ADD.replace(
               /[+]/g,
               (m) => chars[m]
