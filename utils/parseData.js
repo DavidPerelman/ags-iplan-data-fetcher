@@ -1,4 +1,5 @@
 async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
+  console.log(planData);
   let parsedData = {};
 
   const chars = {
@@ -21,6 +22,8 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
       }
     }
   }
+
+  return parsedData;
 
   // Parse mavat data
   if (mavatData) {

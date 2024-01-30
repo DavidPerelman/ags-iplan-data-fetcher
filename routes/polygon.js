@@ -140,6 +140,7 @@ router.post('/', function (req, res) {
       let polygonProperties = {};
 
       for (let i = 0; i < filteredPlans.features.length; i++) {
+        
         polygonProperties = await createProperties(
           filteredPlans.features[i].attributes
         );
