@@ -7,7 +7,8 @@ async function createProperties(data) {
 
   parsedData = await parseData(
     // Data of plan from XPLAN
-    data)
+    data
+    )
 
   // // Get pl_url
   // const url = new URL(data.pl_url);

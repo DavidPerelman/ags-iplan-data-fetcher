@@ -22,7 +22,7 @@ let dateString = date.replaceAll('/', '');
 
        const row = sheet.getRow(1);
 
-       row.hidden = true;
+       sheet.spliceRows(1, 1);
 
     data.map((item)=>{
         sheet.addRow({

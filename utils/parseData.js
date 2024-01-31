@@ -8,19 +8,22 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
   // Parse plan data
   if (planData) {
     for (const property in planData) {
-      if (property === 'pl_name') {
-        parsedData.pl_name = planData[property].replaceAll(',', '');
-      } else if (property === 'pl_date_advertise') {
-        parsedData['pl_date_advertise'] = new Date(
-          planData[property]
-        ).toLocaleDateString('en-GB');
-      } else if (planData[property] === null) {
-        parsedData[property] = null;
-      } else {
-        parsedData[property] = planData[property];
-      }
+      parsedData.pl_number = planData['pl_number'];
+      // if (property === 'pl_name') {
+      //   parsedData.pl_name = planData[property].replaceAll(',', '');
+      // } else if (property === 'pl_date_advertise') {
+      //   parsedData['pl_date_advertise'] = new Date(
+      //     planData[property]
+      //   ).toLocaleDateString('en-GB');
+      // } else if (planData[property] === null) {
+      //   parsedData[property] = null;
+      // } else {
+      //   parsedData[property] = planData[property];
+      // }
     }
   }
+
+  console.log(parsedData);
 
   return parsedData;
 
