@@ -13,11 +13,12 @@ const {
 const { createGeojsonFile } = require('../utils/createGeojsonFile');
 const getPlansBybboxPolygon = require('../lib/polygon');
 const createProperties = require('../utils/createProperties');
+const createExcel = require('../utils/createExcel');
 
 // Date setting
 const locale = moment.locale('en-il');
 const date = moment().format('L');
-let dateDtring = date.replaceAll('/', '');
+let dateString = date.replaceAll('/', '');
 
 router.post('/', function (req, res) {
   const start = new Date().toLocaleTimeString('he-IL');
@@ -145,6 +146,7 @@ router.post('/', function (req, res) {
           filteredPlans.features[i].attributes
         );
 
+        const excel = await createExcel(filteredPlans.features)
         // Create polygon from the plan rings
         planPolygon = await createPolygon(
           filteredPlans.features[i].geometry.rings[0]
@@ -160,7 +162,7 @@ router.post('/', function (req, res) {
     console.log('done');
     // Send geojson for user
     res.download(
-      __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`
+      __dirname + `/../myGeojson/${dateString}_iplans_for_jtmt.geojson`
     );
   });
 });

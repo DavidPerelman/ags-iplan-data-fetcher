@@ -1,5 +1,4 @@
 async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
-  console.log(planData);
   let parsedData = {};
 
   const chars = {
