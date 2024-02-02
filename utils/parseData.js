@@ -8,6 +8,7 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
   // Parse plan data
   if (planData) {
     for (const property in planData) {
+      parsedData.id = planData['id'];
       parsedData.pl_number = planData['pl_number'];
       // if (property === 'pl_name') {
       //   parsedData.pl_name = planData[property].replaceAll(',', '');
@@ -22,8 +23,6 @@ async function parseData(planData, mavatData, GOALS, EXPLANATION, ORG_N) {
       // }
     }
   }
-
-  console.log(parsedData);
 
   return parsedData;
 

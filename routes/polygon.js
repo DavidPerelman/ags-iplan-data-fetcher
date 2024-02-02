@@ -1,28 +1,32 @@
-const express = require('express');
-const moment = require('moment/moment');
-const readShapfile = require('../lib/shapefile');
+const express = require("express");
+const moment = require("moment/moment");
+const readShapfile = require("../lib/shapefile");
 const router = express.Router();
-const turf = require('@turf/turf');
+const turf = require("@turf/turf");
 const {
   convertCoordinatesToLatLong,
   convertCoordinatesToUTM,
   getCentroidOfPolygon,
   checkInsideThePolygon,
   createPolygon,
-} = require('../utils/polygon');
-const { createGeojsonFile } = require('../utils/createGeojsonFile');
-const getPlansBybboxPolygon = require('../lib/polygon');
-const createProperties = require('../utils/createProperties');
-const createExcel = require('../utils/createExcel');
+} = require("../utils/polygon");
+const { createGeojsonFile } = require("../utils/createGeojsonFile");
+const getPlansBybboxPolygon = require("../lib/polygon");
+const createProperties = require("../utils/createProperties");
+const createExcel = require("../utils/createExcel");
+const scrapWeb = require("../utils/scrapWeb");
 
 // Date setting
-const locale = moment.locale('en-il');
-const date = moment().format('L');
-let dateString = date.replaceAll('/', '');
+const locale = moment.locale("en-il");
+const date = moment().format("L");
+let dateString = date.replaceAll("/", "");
 
-router.post('/', function (req, res) {
-  const start = new Date().toLocaleTimeString('he-IL');
+router.post("/", function (req, res) {
+  const start = new Date().toLocaleTimeString("he-IL");
   console.log(`${start}`);
+
+  scrapWeb();
+  return;
 
   let sampleFile;
   let uploadPath;
@@ -32,14 +36,14 @@ router.post('/', function (req, res) {
 
   // Check if shapefile received from the user
   if (!req.files || Object.keys(req.files).length === 0) {
-    return res.status(400).send('No files were uploaded.');
+    return res.status(400).send("No files were uploaded.");
   }
 
   // If shapefile received
   sampleFile = req.files.sampleFile;
 
   // Upload the shapefile to "upload" folder
-  uploadPath = __dirname + '/../uploads/polygons/' + sampleFile.name;
+  uploadPath = __dirname + "/../uploads/polygons/" + sampleFile.name;
 
   // Use the mv() method to place the file somewhere on your server
   sampleFile.mv(uploadPath, async function (err) {
@@ -141,12 +145,13 @@ router.post('/', function (req, res) {
       let polygonProperties = {};
 
       for (let i = 0; i < filteredPlans.features.length; i++) {
-        
+        filteredPlans.features[i].attributes.id = i + 1;
+
         polygonProperties = await createProperties(
           filteredPlans.features[i].attributes
         );
 
-        const excel = await createExcel(filteredPlans.features)
+        const excel = await createExcel(filteredPlans.features);
         // Create polygon from the plan rings
         planPolygon = await createPolygon(
           filteredPlans.features[i].geometry.rings[0]
@@ -159,7 +164,9 @@ router.post('/', function (req, res) {
       // Create geojson file
       const geojson = await createGeojsonFile(features);
     }
-    console.log('done');
+
+    scrapWeb();
+    console.log("done");
     // Send geojson for user
     res.download(
       __dirname + `/../myGeojson/${dateString}_iplans_for_jtmt.geojson`

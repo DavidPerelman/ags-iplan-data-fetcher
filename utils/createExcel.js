@@ -12,26 +12,20 @@ let dateString = date.replaceAll('/', '');
 
     const sheet = workbook.addWorksheet("sheet");
     sheet.columns = [
+      { header: "id", key: "id" },
       { header: "pl_number", key: "pl_number" },
       { header: "pl_name", key: "pl_name" },
       { header: "pl_url", key: "pl_url" },
-      { header: "quantity_delta_120", key: "quantity_delta_120" },
       { header: "station_desc", key: "station_desc" },
-      { header: "plan_county_name", key: "plan_county_name" },
     ];
-
-       const row = sheet.getRow(1);
-
-       sheet.spliceRows(1, 1);
 
     data.map((item)=>{
         sheet.addRow({
+            id: item.attributes.id,
             pl_number: item.attributes.pl_number,
             pl_name: item.attributes.pl_name,
             pl_url: item.attributes.pl_url,
-            quantity_delta_120: item.attributes.quantity_delta_120,
             station_desc: item.attributes.station_desc,
-            plan_county_name: item.attributes.plan_county_name,
           });
     })
 
