@@ -25,9 +25,6 @@ router.post("/", function (req, res) {
   const start = new Date().toLocaleTimeString("he-IL");
   console.log(`${start}`);
 
-  scrapWeb();
-  return;
-
   let sampleFile;
   let uploadPath;
   let unFilteredPlansData = [];
