@@ -14,12 +14,17 @@ const { createGeojsonFile } = require("../utils/createGeojsonFile");
 const getPlansBybboxPolygon = require("../lib/polygon");
 const createProperties = require("../utils/createProperties");
 const createExcel = require("../utils/createExcel");
-const scrapWeb = require("../utils/scrapWeb");
+
+// Time setting
+const d = new Date();
+const timeString = d
+  .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  .replaceAll(":", "");
 
 // Date setting
 const locale = moment.locale("en-il");
-const date = moment().format("L");
-let dateString = date.replaceAll("/", "");
+const date = new Date().toISOString().split("T")[0];
+let dateString = date.replaceAll("-", "").slice(2);
 
 router.post("/", function (req, res) {
   const start = new Date().toLocaleTimeString("he-IL");
@@ -162,11 +167,11 @@ router.post("/", function (req, res) {
       const geojson = await createGeojsonFile(features);
     }
 
-    scrapWeb();
     console.log("done");
     // Send geojson for user
     res.download(
-      __dirname + `/../myGeojson/${dateString}_iplans_for_jtmt.geojson`
+      __dirname +
+        `/../myGeojson/${dateString}_${timeString}_iplans_for_jtmt.geojson`
     );
   });
 });

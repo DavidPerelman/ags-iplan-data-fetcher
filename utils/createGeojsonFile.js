@@ -1,19 +1,25 @@
-const fs = require('fs');
-const moment = require('moment/moment');
+const fs = require("fs");
+const moment = require("moment/moment");
 
-const locale = moment.locale('en-il');
-const date = moment().format('L');
-let dateDtring = date.replaceAll('/', '');
+// Time setting
+const d = new Date();
+const timeString = d
+  .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  .replaceAll(":", "");
+
+const locale = moment.locale("en-il");
+const date = new Date().toISOString().split("T")[0];
+let dateString = date.replaceAll("-", "").slice(2);
 
 // Create geojson file
 async function createGeojsonFile(features) {
   // Define new geojson
   let geojson = {
-    type: 'FeatureCollection',
-    name: `${dateDtring}_iplans_for_jtmt`,
+    type: "FeatureCollection",
+    name: `${dateString}_${timeString}_iplans_for_jtmt`,
     crs: {
-      type: 'name',
-      properties: { name: 'urn:ogc:def:crs:EPSG::2039' },
+      type: "name",
+      properties: { name: "urn:ogc:def:crs:EPSG::2039" },
     },
     // Set the features
     features: features,
@@ -21,7 +27,8 @@ async function createGeojsonFile(features) {
 
   // Create file
   fs.writeFileSync(
-    __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`,
+    __dirname +
+      `/../myGeojson/${dateString}_${timeString}_iplans_for_jtmt.geojson`,
     JSON.stringify(geojson)
   );
   return { success: true };

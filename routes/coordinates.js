@@ -1,17 +1,23 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { getPlansByCoordinates } = require('../lib/coordinates');
-const moment = require('moment/moment');
-const { createGeojsonFile } = require('../utils/createGeojsonFile');
-const createProperties = require('../utils/createProperties');
-const { createPolygon } = require('../utils/polygon');
+const { getPlansByCoordinates } = require("../lib/coordinates");
+const moment = require("moment/moment");
+const { createGeojsonFile } = require("../utils/createGeojsonFile");
+const createProperties = require("../utils/createProperties");
+const { createPolygon } = require("../utils/polygon");
+
+// Time setting
+const d = new Date();
+const timeString = d
+  .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  .replaceAll(":", "");
 
 // Date setting
-const locale = moment.locale('en-il');
-const date = moment().format('L');
-let dateDtring = date.replaceAll('/', '');
+const locale = moment.locale("en-il");
+const date = new Date().toISOString().split("T")[0];
+let dateString = date.replaceAll("-", "").slice(2);
 
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   // Get the x coordinate from user
   const x = req.body.coordinates_x;
   // Get the y coordinate from user
@@ -54,7 +60,8 @@ router.post('/', async (req, res) => {
 
   // Send geojson for user
   res.download(
-    __dirname + `/../myGeojson/${dateDtring}_iplans_for_jtmt.geojson`
+    __dirname +
+      `/../myGeojson/${dateString}_${timeString}_iplans_for_jtmt.geojson`
   );
 });
 

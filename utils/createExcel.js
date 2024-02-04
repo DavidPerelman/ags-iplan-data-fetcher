@@ -1,11 +1,17 @@
 const ExcelJS = require("exceljs");
-const moment = require('moment/moment');
+const moment = require("moment/moment");
 
-const createExcel = async(data) => {
-    // Date setting
-const locale = moment.locale('en-il');
-const date = moment().format('L');
-let dateString = date.replaceAll('/', '');
+const createExcel = async (data) => {
+  // Time setting
+  const d = new Date();
+  const timeString = d
+    .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    .replaceAll(":", "");
+
+  // Date setting
+  const locale = moment.locale("en-il");
+  const date = new Date().toISOString().split("T")[0];
+  let dateString = date.replaceAll("-", "").slice(2);
 
   try {
     const workbook = new ExcelJS.Workbook();
@@ -19,15 +25,15 @@ let dateString = date.replaceAll('/', '');
       { header: "station_desc", key: "station_desc" },
     ];
 
-    data.map((item)=>{
-        sheet.addRow({
-            id: item.attributes.id,
-            pl_number: item.attributes.pl_number,
-            pl_name: item.attributes.pl_name,
-            pl_url: item.attributes.pl_url,
-            station_desc: item.attributes.station_desc,
-          });
-    })
+    data.map((item) => {
+      sheet.addRow({
+        id: item.attributes.id,
+        pl_number: item.attributes.pl_number,
+        pl_name: item.attributes.pl_name,
+        pl_url: item.attributes.pl_url,
+        station_desc: item.attributes.station_desc,
+      });
+    });
 
     // Object.keys(data).forEach(function (key, index) {
     // //   console.log(data[key]);
@@ -41,9 +47,10 @@ let dateString = date.replaceAll('/', '');
     //   });
     // });
 
-    await workbook.xlsx.writeFile(__dirname + `/../myExcel/${dateString}_iplans_for_jtmt.xlsx`);
+    await workbook.xlsx.writeFile(
+      __dirname + `/../myExcel/${dateString}_${timeString}_iplans_for_jtmt.xlsx`
+    );
     const newWorkbook = new Excel.Workbook();
-
   } catch (error) {}
 };
 
